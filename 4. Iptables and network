@@ -1,0 +1,58 @@
+Iptables
+========
+
+Komplettera iptables med en kedja för docker annars kommer containers som vill
+modifiera iptables inte kunna installera sig:
+
+	# nano /etc/sysconfig/iptables
+
+	*nat
+	:PREROUTING ACCEPT [0:0]
+	:INPUT ACCEPT [0:0]
+	:OUTPUT ACCEPT [0:0]
+	:POSTROUTING ACCEPT [0:0]
+	:DOCKER - [0:0]
+	-A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER
+	-A OUTPUT ! -d 127.0.0.0/8 -m addrtype --dst-type LOCAL -j DOCKER
+	-A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE
+	COMMIT
+	*filter
+	:INPUT ACCEPT [0:0]
+	:FORWARD ACCEPT [0:0]
+	:OUTPUT ACCEPT [0:0]
+	:DOCKER - [0:0]
+	-A FORWARD -o docker0 -j DOCKER
+	-A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	-A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+	-A FORWARD -i docker0 -o docker0 -j ACCEPT
+	COMMIT
+
+
+Original ser den ut såhär:
+
+	# nano /etc/sysconfig/iptables
+
+	*filter
+	:INPUT ACCEPT [0:0]
+	:FORWARD ACCEPT [0:0]
+	:OUTPUT ACCEPT [0:0]
+	-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+	-A INPUT -p icmp -j ACCEPT
+	-A INPUT -i lo -j ACCEPT
+	-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+	-A INPUT -m state --state NEW -m udp -p udp --dport 123 -j ACCEPT
+	-A INPUT -m state --state NEW -m udp -p udp --dport 161 -j ACCEPT
+	-A INPUT -j REJECT --reject-with icmp-host-prohibited
+	-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+	COMMIT
+
+
+Starta om iptables så att de nya inställningarna tar:
+
+	# service iptables reload
+
+
+Sätt på IPv4 forwarding och läs in den nya inställningen:
+
+	# sed -i -e "s/^\(net\.ipv4\.ip_forward\) *=.*$/\1 = 1/g" /etc/sysctl.conf
+	# sysctl -p
