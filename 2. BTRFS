@@ -1,0 +1,46 @@
+BTRFS
+=====
+
+Kanske mest lämplig att användas för Docker? Nyare kernel har stabil version
+men däremot så är verktygen i usermode föråldrade och måste uppdateras:
+
+	# wget -r -t1 --no-parent --no-host-directories --cut-dirs=4 --ignore-case -R *.html* http://nas.xxx.xx/repos/CentOS/6/root/btrfs-progs/ -P /
+
+
+Kopiera filerna till rätt ställe:
+
+	# cd btrfs-progs
+	# chmod +x fsck.btrfs btrfs mkfs.btrfs btrfs-debug-tree btrfs-map-logical btrfs-image btrfs-zero-log btrfs-find-root btrfstune btrfs-show-super btrfs-select-super btrfs-convert btrfs-calc-size libbtrfs.so.0.1
+
+	# install -c -m755 -d /usr/local/bin
+	# install -c btrfs mkfs.btrfs fsck.btrfs btrfs-debug-tree btrfs-map-logical btrfs-image btrfs-zero-log btrfs-find-root btrfstune btrfs-show-super btrfs-select-super btrfs-convert /usr/local/bin
+	# ln -s -f btrfs /usr/local/bin/btrfsck
+
+	# install -c -m755 -d /usr/local/lib
+	# install -c libbtrfs.so.0.1 libbtrfs.a /usr/local/lib
+	# ln -s libbtrfs.so.0.1 ./libbtrfs.so.0
+	# ln -s libbtrfs.so.0.1 ./libbtrfs.so
+	# cp -a libbtrfs.so.0 libbtrfs.so /usr/local/lib
+
+
+Disken måste mountas där Docker lagrar alla images.  Ta bort ev. befintlig
+data, OBS! detta raderar alla eventuella/befintliga containers!
+
+	# rm -rf /var/lib/docker
+
+
+Skapa filsystemet på disken:
+
+	# mkfs.btrfs --force --metadata dup --label dockerpool /dev/xvdb
+
+
+Se till att filsystemet mountas automagiskt i samband med systemstart:
+
+	# blkid /dev/xvdb
+	# echo $(blkid /dev/xvdb | cut -d " " -f 2) /var/lib/docker btrfs defaults 0 0 >> /etc/fstab
+
+
+Mounta filsystemet:
+
+	# mkdir /var/lib/docker
+	# mount -a
