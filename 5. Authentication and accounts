@@ -1,0 +1,14 @@
+PAM
+===
+
+Stäng av autentisering m.h.a. fingeravtryck(?!?!?) för att slippa meddelanden
+om "PAM unable to dlopen(/lib64/security/pam_fprintd.so)..." i /var/log/messages;
+
+	# authconfig --disablefingerprint --update
+
+
+Om man vill använda Docker som en icke-root användare så ska den användaren
+läggas till i gruppen "docker". Glöm inte att användaren behöver logga in/ut
+för att detta ska ta!
+
+	# usermod -aG docker <användarnamn>
