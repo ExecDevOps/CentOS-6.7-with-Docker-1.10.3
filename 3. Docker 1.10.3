@@ -1,0 +1,194 @@
+Docker
+======
+
+När den nyare kerneln är installerad och används så kan nyare Docker (1.10.3)
+installeras:
+
+	# curl -SL -O https://get.docker.com/builds/Linux/x86_64/docker-latest
+	# chmod +x docker-latest
+	# mv docker-latest /usr/local/bin/docker
+	# cp /usr/local/bin/docker /usr/bin/docker
+
+
+Man ska nu kunna starta Docker som en daemon och se ifall den ger felmeddelanden.
+OBS! Om man använder devicemapper måste den logiska volym som skapades ovan anges!
+
+	# docker daemon --storage-driver=aufs
+eller
+	# docker daemon --storage-driver=devicemapper --storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/vg_docker/lv_pool --storage-opt dm.use_deferred_removal=true
+eller
+	# docker daemon --storage-driver=btrfs
+
+
+Antingen skapar man ett initscript som startar docker i samband med systemstart:
+
+	# nano /etc/rc.local
+
+	#!/bin/sh
+	touch /var/lock/subsys/local
+	/usr/local/bin/docker daemon --storage-driver=devicemapper --storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/vg_docker/lv_pool dm.use_deferred_removal=true
+
+
+Eller ännu bättre är ett riktigt initscript som kör docker som en tjänst:
+
+	# nano /etc/init.d/docker
+
+	#!/bin/sh
+	#
+	#       /etc/rc.d/init.d/docker
+	#
+	#       Daemon for docker.com
+	#
+	# chkconfig:   2345 95 95
+	# description: Daemon for docker.com
+
+	### BEGIN INIT INFO
+	# Provides:       docker
+	# Required-Start: $network cgconfig
+	# Required-Stop:
+	# Should-Start:
+	# Should-Stop:
+	# Default-Start: 2 3 4 5
+	# Default-Stop:  0 1 6
+	# Short-Description: start and stop docker
+	# Description: Daemon for docker.com
+	### END INIT INFO
+
+	# Source function library.
+	. /etc/rc.d/init.d/functions
+
+	prog="docker"
+	unshare=/usr/bin/unshare
+	exec="/usr/bin/$prog"
+	pidfile="/var/run/$prog.pid"
+	lockfile="/var/lock/subsys/$prog"
+	logfile="/var/log/$prog"
+
+	[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+
+	prestart() {
+	    service cgconfig status > /dev/null
+
+	    if [[ $? != 0 ]]; then
+		service cgconfig start
+	    fi
+
+	}
+
+	start() {
+	    [ -x $exec ] || exit 5
+
+	    check_for_cleanup
+
+	    if ! [ -f $pidfile ]; then
+		prestart
+		printf "Starting $prog:\t"
+		echo "\n$(date)\n" >> $logfile
+		"$unshare" -m -- $exec daemon $other_args &>> $logfile &
+		pid=$!
+		touch $lockfile
+		# wait up to 10 seconds for the pidfile to exist.  see
+		# https://github.com/docker/docker/issues/5359
+		tries=0
+		while [ ! -f $pidfile -a $tries -lt 10 ]; do
+		    sleep 1
+		    tries=$((tries + 1))
+		done
+		success
+		echo
+	    else
+		failure
+		echo
+		printf "$pidfile still exists...\n"
+		exit 7
+	    fi
+	}
+
+	stop() {
+	    echo -n $"Stopping $prog: "
+	    killproc -p $pidfile -d 300 $prog
+	    retval=$?
+	    echo
+	    [ $retval -eq 0 ] && rm -f $lockfile
+	    return $retval
+	}
+
+	restart() {
+	    stop
+	    start
+	}
+
+	reload() {
+	    restart
+	}
+
+	force_reload() {
+	    restart
+	}
+
+	rh_status() {
+	    status -p $pidfile $prog
+	}
+
+	rh_status_q() {
+	    rh_status >/dev/null 2>&1
+	}
+
+
+	check_for_cleanup() {
+	    if [ -f ${pidfile} ]; then
+		/bin/ps -fp $(cat ${pidfile}) > /dev/null || rm ${pidfile}
+	    fi
+	}
+
+	case "$1" in
+	    start)
+		rh_status_q && exit 0
+		$1
+		;;
+	    stop)
+		rh_status_q || exit 0
+		$1
+		;;
+	    restart)
+		$1
+		;;
+	    reload)
+		rh_status_q || exit 7
+		$1
+		;;
+	    force-reload)
+		force_reload
+		;;
+	    status)
+		rh_status
+		;;
+	    condrestart|try-restart)
+		rh_status_q || exit 0
+		restart
+		;;
+	    *)
+		echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+		exit 2
+	esac
+
+	exit $?
+
+
+Gör startscriptet körbart och installera den som en tjänst samt starta tjänsten:
+
+	# chmod +x /etc/init.d/docker
+	# chkconfig --add docker
+	# chkconfig docker on
+	# service docker start
+
+
+Skapa en konfigurationsfil som innehåller startupparametrar för tjänsten, dessa
+läses in av startscriptet. OBS! Om man använder devicemapper måste den logiska
+volym som skapades ovan anges! BTRFS klarar inte SELinux.
+
+	# echo "other_args=\"--selinux-enabled --storage-driver=aufs\"" > /etc/sysconfig/docker
+eller
+	# echo "other_args=\"--selinux-enabled --storage-driver=devicemapper --storage-opt dm.fs=xfs --storage-opt dm.thinpooldev=/dev/vg_docker/lv_pool dm.use_deferred_removal=true\"" > /etc/sysconfig/docker
+eller
+	# echo "other_args=\"--storage-driver=btrfs\"" > /etc/sysconfig/docker
