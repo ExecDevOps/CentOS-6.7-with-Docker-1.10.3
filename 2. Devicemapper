@@ -1,28 +1,26 @@
-Devicemapper
-============
-
-Docker lagrar alla images under /var/lib/docker. Lagringsytan för varje container
-ansluts av devicemapper via loop-mounts. Detta är helt förkastligt ur prestanda-
-synpunkt och måste snarast göras om till LVM baserat. Lämpligast är det på en
-separat (snabb!) disk, vid start av docker formatteras den till XFS. Ta bort ev.
-befintlig data, OBS! detta raderar alla eventuella/befintliga containers!
+Docker stores all images and containers under /var/lib/docker. The storage space
+for every container gets mounted by devicemapper via a loop-mount. This is 
+totally wrong from a performace point of view and urgently needs to be replaced 
+with an LVM based storage. The best is to store it on a separate (fast!) disk,
+Docker will format it with CFS upon it's first start. Remove any existing data,
+NOTE! any images / containers will be deleted:
 
 	# rm -rf /var/lib/docker
 
 
-Skapa fysisk volym av disken och en volymgrupp samt lägg till den i gruppen:
+Create a physical volume (PV) and a volumegroup (VG) and add the PV to the VG:
 
 	# wipefs -a /dev/xvdb
 	# pvcreate /dev/xvdb
 	# vgcreate vg_docker /dev/xvdb
 
 
-Skapa logisk volym där docker ska lagra data respektive metadata:
+Create a logical volume (LV) where Docker will store it's data and metadata:
 
 	# lvcreate --wipesignatures y -l 100%FREE -n lv_pool vg_docker
 
 
-Beskåda underverket:
+Sit back and enjoy the masterpiece:
 
 	# lvs
 	# lsblk
