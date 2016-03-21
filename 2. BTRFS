@@ -1,13 +1,11 @@
-BTRFS
-=====
-
-Kanske mest lämplig att användas för Docker? Nyare kernel har stabil version
-men däremot så är verktygen i usermode föråldrade och måste uppdateras:
+Perhaps BTRFS is the best suited storage for Docker? Recent kernels provide
+stable version of BTRFS, but the management tools in userspace are hopelessly
+outdated and needs to be replaced. Download pre-built 4.4.1 binaries:
 
 	# wget -r -t1 --no-parent --no-host-directories --cut-dirs=4 --ignore-case -R *.html* http://nas.xxx.xx/repos/CentOS/6/root/btrfs-progs/ -P /
 
 
-Kopiera filerna till rätt ställe:
+Copy/move them to where they belong:
 
 	# cd btrfs-progs
 	# chmod +x fsck.btrfs btrfs mkfs.btrfs btrfs-debug-tree btrfs-map-logical btrfs-image btrfs-zero-log btrfs-find-root btrfstune btrfs-show-super btrfs-select-super btrfs-convert btrfs-calc-size libbtrfs.so.0.1
@@ -23,24 +21,25 @@ Kopiera filerna till rätt ställe:
 	# cp -a libbtrfs.so.0 libbtrfs.so /usr/local/lib
 
 
-Disken måste mountas där Docker lagrar alla images.  Ta bort ev. befintlig
-data, OBS! detta raderar alla eventuella/befintliga containers!
+A BTRFS formatted disk will be mounted where Docker expects to store its
+files, remove any remaining files/dirs first. NOTE! This will delete all
+existing images and containers!
 
 	# rm -rf /var/lib/docker
 
 
-Skapa filsystemet på disken:
+Create a BTRFS filesystem on the disk:
 
 	# mkfs.btrfs --force --metadata dup --label dockerpool /dev/xvdb
 
 
-Se till att filsystemet mountas automagiskt i samband med systemstart:
+Make sure that the filesystem for Docker gets mounted with every re-boot:
 
 	# blkid /dev/xvdb
 	# echo $(blkid /dev/xvdb | cut -d " " -f 2) /var/lib/docker btrfs defaults 0 0 >> /etc/fstab
 
 
-Mounta filsystemet:
+Mount the filesystem:
 
 	# mkdir /var/lib/docker
 	# mount -a
