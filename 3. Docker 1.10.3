@@ -1,13 +1,14 @@
-Docker
-======
-
-När den nyare kerneln är installerad och används så kan nyare Docker (1.10.3)
-installeras:
+After a newer kernel has been installed and is in use it is time for install of
+a newer version of Docker:
 
 	# curl -SL -O https://get.docker.com/builds/Linux/x86_64/docker-latest
 	# chmod +x docker-latest
 	# mv docker-latest /usr/local/bin/docker
 	# cp /usr/local/bin/docker /usr/bin/docker
+
+
+Docker should be able to startup as a daemon now. Start docker as a daemon and watch
+for any errormessages. Note! If one decides to use devicemapper then the LVs created above
 
 
 Man ska nu kunna starta Docker som en daemon och se ifall den ger felmeddelanden.
