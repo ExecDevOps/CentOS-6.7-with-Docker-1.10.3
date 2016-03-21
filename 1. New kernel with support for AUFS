@@ -1,21 +1,19 @@
-AUFS
-====
-
-Vill man ha stöd för AUFS så måste en annan kernel installeras, lägg till repo
-för både "long-term" (lt) och "mainline" (ml) kernelvarianterna:
+There is no support for AUFS in the ElRepo-ML kernel, a custom-built with support
+for AUFS has to be built/installed instead. Add a repo that provides ready-built
+kernels and install kernel from there:
 https://git.spaceduck.org/bnied/kernel-lt-aufs
 
 	# wget https://yum.spaceduck.org/kernel-lt-aufs/kernel-lt-aufs.repo -O /etc/yum.repos.d/kernel-lt-aufs.repo
 	# wget https://yum.spaceduck.org/kernel-ml-aufs/kernel-ml-aufs.repo -O /etc/yum.repos.d/kernel-ml-aufs.repo
 
 
-Ställ in att systemet automatiskt sätter denna kernelvariant som default i GRUB:
+Make this kernel be the default in GRUB:
 
 	# sed -i -e "s/^\(DEFAULTKERNEL\) *=.*$/\1=kernel-ml-aufs/g" /etc/sysconfig/kernel
 
 
-Installera kernel med stöd för AUFS, byt ut "-ml-" mot "-lt" för long-term support
-kernel som då är äldre men kanske stabilare än senaste mainline kerneln:
+Install kernel with support for AUFS, use "-ml-" for "mainline" (cutting edge) 
+or "-tl-" for "long-term support" according to personal preference:
 
 	# yum --nogpgcheck -y install kernel-ml-aufs kernel-ml-aufs-devel
 	# reboot
