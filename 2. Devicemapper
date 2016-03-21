@@ -25,3 +25,13 @@ Sit back and enjoy the masterpiece:
 	# lvs
 	# lsblk
 	# dmsetup table
+	
+	
+Unfortunately, devicemapper demands "udev sync" to be implemented and working
+in order not to create a complet mess of the filesystem on a drive whenever it 
+gets de/activated. 
+
+This means that however good the devicemapper driver is, it is not a viable 
+option for Docker on CentOS 6.7 since this will lead to a filesystem mayhem. 
+
+Ofcourse "udev sync" and devicemapper work and play nice on CentOS 7.x....
