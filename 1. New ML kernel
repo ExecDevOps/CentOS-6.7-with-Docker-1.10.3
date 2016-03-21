@@ -1,9 +1,7 @@
-Nyare Kernel
-============
-
-Eftersom CentOS 6.7 har för gammal kernel så stöds endast Docker upp till och
-med version 1.7.1. Vill man ha högre version så måste först en nyare kernel
-installeras och användas:
+CentOS 6.7 has an old kernel that does not support newer Docker features so 
+Docker (and CentOS) only supports up to version 1.7.1 on CentOS 6.7. If one
+wants to have a more recent version of Docker then the kernel has to be changed 
+to a newer:
 
 	# yum install -y --nogpgcheck http://www.elrepo.org/elrepo-release-6-6.el6.elrepo.noarch.rpm
 	# sed -ie "s/^\(installonly_limit\) *=.*$/\1=2/g" /etc/yum.conf
