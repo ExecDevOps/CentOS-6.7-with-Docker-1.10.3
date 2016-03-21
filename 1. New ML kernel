@@ -6,7 +6,7 @@ med version 1.7.1. Vill man ha högre version så måste först en nyare kernel
 installeras och användas:
 
 	# yum install -y --nogpgcheck http://www.elrepo.org/elrepo-release-6-6.el6.elrepo.noarch.rpm
-	# sed -i -e "s/^\(installonly_limit\) *=.*$/\1=2/g" /etc/yum.conf
+	# sed -ie "s/^\(installonly_limit\) *=.*$/\1=2/g" /etc/yum.conf
 	# yum --enablerepo=elrepo-kernel -y install kernel-ml kernel-ml-devel
 	# sed -ie "s/^default=1$/default=0/" /boot/grub/grub.conf
 	# sed -ie "s/^\(DEFAULTKERNEL\) *=.*$/\1=kernel-ml/g" /etc/sysconfig/kernel
